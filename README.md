@@ -6,20 +6,20 @@
 
 ## Table of Contents
 
-* [About / Overview](https://www.google.com/search?q=%23about--overview)
-* [Goals of the Repository](https://www.google.com/search?q=%23goals_of_the_repository)
-* [AWS Well-Architected Framework Alignment](https://www.google.com/search?q=%23aws-well-architected-framework-alignment)
-* [Site Reliability Engineering (SRE) Maturity](https://www.google.com/search?q=%23site-reliability-engineering-sre-maturity)
-* [Architecture & Structural Layers](https://www.google.com/search?q=%23architecture--structural-layers)
-* [Prerequisites](https://www.google.com/search?q=%23prerequisites)
-* [Local Setup & Forking Instructions](https://www.google.com/search?q=%23local-setup--forking-instructions)
-* [Deployment & Execution Steps](https://www.google.com/search?q=%23deployment--execution-steps)
-* [Usage & Telemetry Verification](https://www.google.com/search?q=%23usage--telemetry-verification)
-* [Monitoring & Maintenance](https://www.google.com/search?q=%23monitoring--maintenance)
-* [Cleanup / Teardown](https://www.google.com/search?q=%23cleanup--teardown)
-* [Contributing](https://www.google.com/search?q=%23contributing)
-* [License](https://www.google.com/search?q=%23license)
-* [References / Further Reading](https://www.google.com/search?q=%23references--further-reading)
+- [About / Overview](#about--overview)
+- [Goals of the Repository](#goals-of-the-repository)
+- [AWS Well-Architected Framework Alignment](#aws-well-architected-framework-alignment)
+- [Site Reliability Engineering (SRE) Maturity](#site-reliability-engineering-sre-maturity)
+- [Architecture \& Structural Layers](#architecture--structural-layers)
+- [Prerequisites](#prerequisites)
+- [Local Setup \& Forking Instructions](#local-setup--forking-instructions)
+- [Deployment \& Execution Steps](#deployment--execution-steps)
+- [Usage \& Telemetry Verification](#usage--telemetry-verification)
+- [Monitoring \& Maintenance](#monitoring--maintenance)
+- [Cleanup / Teardown](#cleanup--teardown)
+- [Contributing](#contributing)
+- [License](#license)
+- [References / Further Reading](#references--further-reading)
 
 ---
 
