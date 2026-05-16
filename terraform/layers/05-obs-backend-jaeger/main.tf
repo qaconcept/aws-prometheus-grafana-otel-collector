@@ -70,8 +70,8 @@ resource "aws_route53_record" "jaeger" {
   name    = "jaeger.${var.domain_name}"
   type    = "A"
   alias {
-    name = aws_lb.main.dns_name
-    zone_id = aws_lb.main.zone_id
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
     evaluate_target_health = true
   }
 }
@@ -88,7 +88,17 @@ resource "aws_ecs_task_definition" "jaeger" {
   container_definitions = jsonencode([{
     name  = "jaeger"
     image = "jaegertracing/all-in-one:latest"
-    portMappings = [{ containerPort = 16686 }]
+    portMappings = [
+      { containerPort = 16686 },
+      { containerPort = 14269 }
+    ]
+    healthCheck = {
+      command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:14269/ || exit 1"]
+      interval    = 30
+      timeout     = 5
+      retries     = 3
+      startPeriod = 15
+    }
     logConfiguration = {
       logDriver = "awslogs"
       options = {

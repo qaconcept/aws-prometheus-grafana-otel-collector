@@ -19,6 +19,7 @@ resource "aws_lb_target_group" "grafana" {
 resource "aws_lb_listener_rule" "grafana" {
   listener_arn = var.https_listener_arn
   priority     = 30
+
   action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.grafana.arn
@@ -64,6 +65,15 @@ resource "aws_ecs_task_definition" "grafana" {
     name  = "grafana"
     image = "grafana/grafana:latest"
     portMappings = [{ containerPort = 3000 }]
+    
+    healthCheck = {
+      command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval    = 30
+      timeout     = 5
+      retries     = 3
+      startPeriod = 15
+    }
+
     environment = [
       { name = "GF_SECURITY_ADMIN_PASSWORD", value = "admin123" } # Sets initial admin password
     ]

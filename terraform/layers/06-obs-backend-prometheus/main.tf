@@ -19,6 +19,7 @@ resource "aws_lb_target_group" "prometheus" {
 resource "aws_lb_listener_rule" "prometheus" {
   listener_arn = var.https_listener_arn
   priority     = 20
+ 
   action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.prometheus.arn
@@ -64,6 +65,15 @@ resource "aws_ecs_task_definition" "prometheus" {
     name  = "prometheus"
     image = "prom/prometheus:latest"
     portMappings = [{ containerPort = 9090 }]
+    
+    healthCheck = {
+      command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval    = 30
+      timeout     = 5
+      retries     = 3
+      startPeriod = 20
+    }
+
     mountPoints = [{
       sourceVolume  = "prometheus-storage"
       containerPath = "/prometheus"
