@@ -88,6 +88,8 @@ This repository is built around key SRE operational standards:
 
 The codebase is organized into isolated structural modules. This layout ensures you can apply modifications to high-level frontend interfaces (like Grafana) without risking updates to foundational core network resources (like the VPC layout).
 
+![AWS HA Observability Stack Architecture Diagram](images/AWS-HA-Observability-Stack_AWS-Prometheus-Jaeger-OpenTelemetry-Collector-Grafana.png)
+
 ```
  ┌────────────────────────────────────────────────────────┐
  │           08-grafana-dashboards (HTTPS GUI)           │
