@@ -37,10 +37,13 @@ case $LAYER in
     echo "Updating Layer 04..."
     update_var "ecs_task_execution_role_arn" "\"$(terraform -chdir=layers/04-iam output -raw ecs_task_execution_role_arn)\""
     update_var "ecs_task_role_arn" "\"$(terraform -chdir=layers/04-iam output -raw ecs_task_role_arn)\""
+  # Add this line to map the role for Layer 09:
+    update_var "ecs_exec_role_arn" "\"$(terraform -chdir=layers/04-iam output -raw ecs_task_execution_role_arn)\""
     ;;
   "05")
     echo "Updating Layer 05..."
     update_var "ecs_cluster_id" "\"$(terraform -chdir=layers/05-obs-backend-jaeger output -raw ecs_cluster_id)\""
+    update_var "cluster_name" "\"$(terraform -chdir=layers/05-obs-backend-jaeger output -raw ecs_cluster_name)\""
     update_var "alb_dns_name" "\"$(terraform -chdir=layers/05-obs-backend-jaeger output -raw alb_dns_name)\""
     update_var "alb_arn" "\"$(terraform -chdir=layers/05-obs-backend-jaeger output -raw alb_arn)\""
     update_var "https_listener_arn" "\"$(terraform -chdir=layers/05-obs-backend-jaeger output -raw https_listener_arn)\""
@@ -59,7 +62,7 @@ case $LAYER in
     update_var "otel_service_name" "\"$(terraform -chdir=layers/08-obs-collector output -raw otel_service_name)\""
     ;;
   *)
-    echo "Usage: ./sync-vars.sh [01|02|03|04|05|06|07]"
+    echo "Usage: ./sync-vars.sh [01|02|03|04|05|06|07|08]"
     ;;
 esac
 echo "Done."
