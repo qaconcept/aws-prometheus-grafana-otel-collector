@@ -115,15 +115,14 @@ The codebase is organized into isolated structural modules. This layout ensures 
 
 ### Layer Manifest Details
 
-* **`01-vpc-network`**: Allocates the base multi-AZ network block, setting up your public subnets, private subnets, internet gateways, and routing tables.
-* **`02-security-groups`**: Establishes individual firewall boundaries, mapping traffic paths strictly between components.
-* **`03-ecr-repositories`**: Configures clean, private Amazon Elastic Container Registries to store and manage custom container images.
-* **`04-ecs-fargate-cluster`**: Provisions the shared serverless ECS container orchestration host layer.
-* **`05-opentelemetry-collector`**: Deploys the core open telemetry collection pipeline daemon tasks.
-* **`06-jaeger-tracing`**: Deploys the localized tracing engine instance.
-* **`07-prometheus-ecs`**: Builds the core backend time-series database with underlying EFS file storage links.
-* **`08-grafana-dashboards`**: Deploys the front-facing dashboard layer, using Route 53 and ACM to handle public domain mapping over HTTPS.
-
+* **`01-vpc: Base networking.
+* **`02-ingress-egress: Security group boundaries.
+* **`03-storage: EFS persistent storage configuration.
+* **`04-iam: IAM roles and policies.
+* **`05-obs-backend-jaeger: Tracing backend.
+* **`06-obs-backend-prometheus: Metrics TSDB.
+* **`07-obs-frontend-grafana: Visualization layer.
+* **`08-obs-collector: OTEL collection pipeline.
 ---
 
 ## Prerequisites
@@ -178,10 +177,18 @@ In the root directory of the repository, copy or edit the existing `central.tfva
 
 ```hcl
 # Example values inside your central.tfvars
-project_name = "sre-concepts"
-region       = "us-east-1"
-domain_name  = "yourdomain.com"
+project_name        = "sre-concepts"
+region              = "us-east-1"
+aws_region          = "us-east-1"
+environment         = "dev"
+vpc_cidr            = "10.0.0.0/16"
+availability_zones  = ["us-east-1a", "us-east-1b"]
+domain_name         = "sreconcepts.com"
+# Set to true to create a new ACM cert, false to use the existing one
+create_ssl_cert     = false
 
+* **'If create_ssl_cert = false: Terraform uses a data source to fetch the existing certificate for *.yourdomain.com and yourdomain.com.
+* **'If create_ssl_cert = true: Terraform creates a new *.yourdomain.com certificate and performs DNS validation via Route 53.
 ```
 
 ### Step 2: Sequential Phased Layer Deployment
@@ -191,61 +198,89 @@ Because subsequent modules rely on inputs from earlier layers, you must deploy t
 Run the following commands:
 
 ```bash
-# Initialize and Apply Phase 1: Core Networking
-cd layers/01-vpc-network
+# Initialize and Apply Phase 1: Base networking.
+cd layers/01-vpc
 terraform init
 terraform plan -var-file="../../central.tfvars"
 terraform apply -var-file="../../central.tfvars" -auto-approve
 cd ../.. && ./sync-vars.sh 01
+cd layers/01-vpc 
+chmod +x validate.sh
+./validate.sh  
 
-# Initialize and Apply Phase 2: Security Rules Boundary
-cd layers/02-security-groups
+# Initialize and Apply Phase 2: Security group boundaries.
+cd layers/02-ingress-egress
 terraform init
 terraform plan -var-file="../../central.tfvars"
 terraform apply -var-file="../../central.tfvars" -auto-approve
 cd ../.. && ./sync-vars.sh 02
+cd layers/02-ingress-egress
+chmod +x validate.sh
+./validate.sh  
 
-# Initialize and Apply Phase 3: Container Registries
-cd layers/03-ecr-repositories
+# Initialize and Apply Phase 3: EFS persistent storage configuration.
+cd layers/03-storage
 terraform init
 terraform plan -var-file="../../central.tfvars"
 terraform apply -var-file="../../central.tfvars" -auto-approve
 cd ../.. && ./sync-vars.sh 03
+cd layers/03-storage
+chmod +x validate.sh
+./validate.sh  
 
-# Initialize and Apply Phase 4: Core Fargate Clusters
-cd layers/04-ecs-fargate-cluster
+# Initialize and Apply Phase 4: IAM roles and policies.
+cd layers/04-iam
 terraform init
 terraform plan -var-file="../../central.tfvars"
 terraform apply -var-file="../../central.tfvars" -auto-approve
 cd ../.. && ./sync-vars.sh 04
+cd layers/04-iam
+chmod +x validate.sh
+./validate.sh  
 
-# Initialize and Apply Phase 5: OpenTelemetry Collectors
-cd layers/05-opentelemetry-collector
+# Initialize and Apply Phase 5: Tracing backend. Also ACM Certificate if needed
+cd layers/05-obs-backend-jaeger
 terraform init
 terraform plan -var-file="../../central.tfvars"
 terraform apply -var-file="../../central.tfvars" -auto-approve
 cd ../.. && ./sync-vars.sh 05
+cd layers/05-obs-backend-jaeger
+chmod +x validate.sh
+# Note: Ensure ECS Task is running and healthy prior to running ./validate.sh  
+./validate.sh  
 
-# Initialize and Apply Phase 6: Jaeger Tracing Backend
-cd layers/06-jaeger-tracing
+# Initialize and Apply Phase 6: Metrics TSDB.
+cd layers/06-obs-backend-prometheus
 terraform init
 terraform plan -var-file="../../central.tfvars"
 terraform apply -var-file="../../central.tfvars" -auto-approve
 cd ../.. && ./sync-vars.sh 06
+cd layers/06-obs-backend-prometheus
+chmod +x validate.sh
+# Note: Ensure ECS Task is running and healthy prior to running ./validate.sh  
+./validate.sh  
 
-# Initialize and Apply Phase 7: Prometheus Target Engine
-cd layers/07-prometheus-ecs
+# Initialize and Apply Phase 7: Visualization layer.
+cd layers/07-obs-frontend-grafana
 terraform init
 terraform plan -var-file="../../central.tfvars"
 terraform apply -var-file="../../central.tfvars" -auto-approve
 cd ../.. && ./sync-vars.sh 07
+cd layers/07-obs-frontend-grafana
+chmod +x validate.sh
+# Note: Ensure ECS Task is running and healthy prior to running ./validate.sh  
+./validate.sh  
 
-# Initialize and Apply Phase 8: Grafana Visualization Portals
-cd layers/08-grafana-dashboards
+# Initialize and Apply Phase 8: OTEL collection pipeline.
+cd layers/08-obs-collector
 terraform init
 terraform plan -var-file="../../central.tfvars"
 terraform apply -var-file="../../central.tfvars" -auto-approve
 cd ../.. && ./sync-vars.sh 08
+cd layers/08-obs-collector
+chmod +x validate.sh
+# Note: Ensure ECS Task is running and healthy prior to running ./validate.sh  
+./validate.sh
 
 ```
 
@@ -261,40 +296,12 @@ Once Layer 08 is fully deployed, all endpoints are verified and secured via HTTP
 
 Open your web browser and navigate to your configured domain paths:
 
-* **Grafana Visual UI:** `https://grafana.yourdomain.com` (Default login user: `admin` / Password: Check your `central.tfvars` configuration variables).
+* **Grafana Visual UI:** `https://grafana.yourdomain.com` (Default login user: `admin` / Password: 'admin123 ).
 * **Prometheus Dashboard:** `https://prometheus.yourdomain.com`
 * **Jaeger Ingest UI:** `https://jaeger.yourdomain.com`
 
-### 2. Testing Your Pipeline End-to-End
-
-To confirm that metric and trace payloads travel correctly across your network paths from application runtimes into your visualization dashboards, you can send a test payload from your terminal.
-
-Execute a mock HTTP POST payload directly against your public application load balancer routing endpoint, targeting the OpenTelemetry receiver network hooks:
-
-```bash
-curl -i -X POST http://otel-collector.yourdomain.com:4318/v1/metrics \
-  -H "Content-Type: application/json" \
-  -d '{
-    "resourceMetrics": [{
-      "resource": {
-        "attributes": [{"key": "service.name", "value": {"stringValue": "sre-sandbox-app"}}]
-      },
-      "scopeMetrics": [{
-        "metrics": [{
-          "name": "heartbeat.ping.count",
-          "sum": {
-            "dataPoints": [{"asInt": "1"}],
-            "aggregationTemporality": 1,
-            "isMonotonic": true
-          }
-        }]
-      }]
-    }]
-  }'
 
 ```
-
-Verify the ingest pathway by logging into `https://prometheus.yourdomain.com` and querying the metric name `heartbeat_ping_count`.
 
 ---
 
@@ -321,19 +328,15 @@ To avoid incurring unexpected charges on your cloud statement, clean up all prov
 Run this command sequence:
 
 ```bash
-# Terminate tracking layers and working dashboards
-cd layers/08-grafana-dashboards && terraform destroy -var-file="../../central.tfvars" -auto-approve
-cd ../07-prometheus-ecs && terraform destroy -var-file="../../central.tfvars" -auto-approve
-cd ../06-jaeger-tracing && terraform destroy -var-file="../../central.tfvars" -auto-approve
-cd ../05-opentelemetry-collector && terraform destroy -var-file="../../central.tfvars" -auto-approve
-
-# Terminate clusters, repositories, and security rules
-cd ../04-ecs-fargate-cluster && terraform destroy -var-file="../../central.tfvars" -auto-approve
-cd ../03-ecr-repositories && terraform destroy -var-file="../../central.tfvars" -auto-approve
-cd ../02-security-groups && terraform destroy -var-file="../../central.tfvars" -auto-approve
-
-# Terminate base network
-cd ../01-vpc-network && terraform destroy -var-file="../../central.tfvars" -auto-approve
+# Execute from root terraform folder
+terraform -chdir=layers/08-obs-collector destroy -var-file="../../central.tfvars" -auto-approve
+terraform -chdir=layers/07-obs-frontend-grafana destroy -var-file="../../central.tfvars" -auto-approve
+terraform -chdir=layers/06-obs-backend-prometheus destroy -var-file="../../central.tfvars" -auto-approve
+terraform -chdir=layers/05-obs-backend-jaeger destroy -var-file="../../central.tfvars" -auto-approve
+terraform -chdir=layers/04-iam destroy -var-file="../../central.tfvars" -auto-approve
+terraform -chdir=layers/03-storage destroy -var-file="../../central.tfvars" -auto-approve 
+terraform -chdir=layers/02-ingress-egress destroy -var-file="../../central.tfvars" -auto-approve
+terraform -chdir=layers/01-vpc destroy -var-file="../../central.tfvars" -auto-approve
 
 ```
 
