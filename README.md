@@ -131,7 +131,7 @@ Before starting, make sure your local machine and cloud environments have the fo
 
 * **AWS Account Access:** An active AWS account with administrative permissions covering VPC, ECS, Route 53, ACM, and EFS resource controls.
 * **Dedicated Route 53 Hosted Zone:** A public domain zone registered inside Route 53.
-> ⚠️ **CRITICAL REQUIREMENT:** The hosted zone must contain *only* its initial, default SOA (Start of Authority) and NS (Name Server) records. Clean out any pre-existing routing entries before deployment to avoid certificate verification locks during the setup of the shared Application Load Balancer.
+> ⚠️ **CRITICAL REQUIREMENT:** The hosted zone must contain its initial, default SOA (Start of Authority) and NS (Name Server) records. Clean out any pre-existing routing entries before deployment to avoid certificate verification locks during the setup of the shared Application Load Balancer.
 
 
 * **AWS CLI Tooling:** Installed and configured locally via `aws configure` with standard administrative secret access keys.
@@ -187,9 +187,9 @@ domain_name         = "sreconcepts.com"
 # Set to true to create a new ACM cert, false to use the existing one
 create_ssl_cert     = false
 
+```
 * **'If create_ssl_cert = false: Terraform uses a data source to fetch the existing certificate for *.yourdomain.com and yourdomain.com.
 * **'If create_ssl_cert = true: Terraform creates a new *.yourdomain.com certificate and performs DNS validation via Route 53.
-```
 
 ### Step 2: Sequential Phased Layer Deployment
 
